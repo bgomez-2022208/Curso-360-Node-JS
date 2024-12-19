@@ -1,38 +1,54 @@
-const router = require ("express").Router()
+const router = require("express").Router()
 
 const {faker} = require("@faker-js/faker")
 
 const estado = require("../estado/estado.model")
 
-router.post("/estate", async (req,res) => {
+function validateEstadoData(data) {
+    if (!data.nombre) {
+        throw new Error("The 'nombre' field is required.");
+    }
+}
+
+router.post("/estate", async (req, res) => {
     await estado.sync()
     const estadoData = req.body;
     console.log('name is: ', estadoData)
-    const createEstado = await estado.create({
-        nombre: estadoData.nombre
-    })
-    res.status(200).json({
-        ok: true,
-        status: 201,
-        message: "Created Estate",
-        data: createEstado
-    })
+
+    try {
+        validateEstadoData(estadoData);
+        const createEstado = await estado.create({
+            nombreEstado: estadoData.nombre
+        })
+        res.status(201).json({
+            ok: true,
+            status: 201,
+            message: "Estado Creado",
+            data: createEstado
+        })
+    } catch (error) {
+        res.status(500).json({
+            ok: false,
+            status: 500,
+            message: "Error al crear el estado",
+            error: error.message
+        });
+    }
 });
 
-router.put("/estate/:estado_id", async (req,res) => {
+router.put("/estate/:estado_id", async (req, res) => {
     const idestados = req.params.estado_id
     const estadoData = req.body;
     const updateEstado = await estado.update({
-        nombre: estadoData.nombre
-    },{
-        where: {
-            idestados: idestados,
-        },
-    }
+        nombreEstado: estadoData.nombre
+        }, {
+            where: {
+                idEstado: idestados,
+            },
+        }
     );
     res.status(200).json({
-        ok: true,
-        status: 200,
+        message: "Estado actualizado",
         body: updateEstado
     })
 })

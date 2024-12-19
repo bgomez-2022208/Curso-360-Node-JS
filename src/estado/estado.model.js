@@ -10,14 +10,16 @@ const sequelize = new Sequelize("GDA00138_OT_brandon_gomez", "root", "2006", {
 class estado extends Model {}
 
 estado.init({
-    idestados: {
+    idEstado: {
         type: DataTypes.INTEGER,
         autoIncrement: true,
-        primaryKey: true
+        primaryKey: true,
+        field: 'idestados'
     },
-    nombre: {
+    nombreEstado: {
         type: DataTypes.STRING,
-        allowNull: false
+        allowNull: false,
+        field: "nombre"
     },
 },{
    sequelize,

@@ -3,6 +3,8 @@ const morgan = require("morgan")
 
 const estadoRouter = require("../estado/estado.router")
 const rolesRouter = require("../rol/rol.router")
+const clientesRouter = require("../clientes/clientes.router")
+
 
 const app = express()
 
@@ -16,4 +18,6 @@ app.get("/", (req, res) => {
 
     app.use("/api/v1", estadoRouter)
     app.use("/api/v1", rolesRouter)
+    app.use("/api/v1", clientesRouter)
+
     module.exports = app;
