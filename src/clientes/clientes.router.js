@@ -1,4 +1,3 @@
-// src/clientes/clientes.router.js
 const router = require("express").Router();
 const { faker } = require("@faker-js/faker");
 const Clientes = require("../clientes/clientes.model");

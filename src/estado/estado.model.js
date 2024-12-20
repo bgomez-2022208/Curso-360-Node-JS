@@ -1,10 +1,6 @@
 const { Sequelize, Model, DataTypes, STRING} = require ("sequelize")
 
-const sequelize = new Sequelize("GDA00138_OT_brandon_gomez", "root", "2006", {
-    host: "localhost",
-    dialect: "mysql",
-    port: 3306
-})
+const sequelize = require('../db/mysql');
 
 
 class estado extends Model {}

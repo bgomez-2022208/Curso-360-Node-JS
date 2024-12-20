@@ -2,26 +2,28 @@ const { Sequelize, Model, DataTypes, STRING} = require ("sequelize")
 
 const sequelize = require('../db/mysql');
 
-class usuarios extends Model {}
+class orden extends Model {
+}
 
-usuarios.init({
-    idUsuarios:{
+orden.init({
+    idOrden: {
         type: DataTypes.INTEGER,
         autoIncrement: true,
         primaryKey: true,
-        field: "idusuarios"
+        field: "idOrden"
     },
-    rol_idrol:{
+    idUsuarios: {
         type: DataTypes.INTEGER,
         allowNull: false,
         references: {
-            model: 'Rol',
-            key: "idrol"
+            model: 'Usuarios',
+            key: "idusuarios"
         },
         onUpdate: 'CASCADE',
-        onDELETE: 'CASCADE'
+        onDELETE: 'CASCADE',
+        field: "usuarios_idusuarios"
     },
-    estados_idestados: {
+    idEstados: {
         type: DataTypes.INTEGER,
         allowNull: false,
         references: {
@@ -29,32 +31,8 @@ usuarios.init({
             key: "idestados"
         },
         onUpdate: 'CASCADE',
-        onDELETE: 'CASCADE'
-    },
-    correoElectronico: {
-        type: DataTypes.STRING,
-        allowNull: false,
-        field: "correo_electronico"
-    },
-    nombreCompleto: {
-        type: DataTypes.STRING,
-        allowNull: false,
-        field: "nombre_completo"
-    },
-    passwordUsuario: {
-        type: DataTypes.STRING,
-        allowNull: false,
-        field: "password"
-    },
-    telefonoUsuario: {
-        type: DataTypes.STRING,
-        allowNull: false,
-        field: "telefono"
-    },
-    fechaNacimiento: {
-        type: DataTypes.DATE,
-        allowNull: false,
-        field: "fecha_nacimiento"
+        onDELETE: 'CASCADE',
+        field: "estados_idestados"
     },
     fechaCreacion: {
         type: DataTypes.DATE,
@@ -62,21 +40,40 @@ usuarios.init({
         field: 'fecha_creacion',
         defaultValue: Sequelize.NOW
     },
-    Clientes_idClientes:{
-        type: DataTypes.INTEGER,
+    nombreCompleto: {
+        type: DataTypes.STRING,
         allowNull: false,
-        references: {
-            model: "Clientes",
-            key: "idestados"
-        },
-        onUpdate: 'CASCADE',
-        onDELETE: 'CASCADE'
+        field: "nombre_completo"
+    },
+    ordenDireccion: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        field: "direccion"
+    },
+    ordenTelefono: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        field: "telefono"
+    },
+    correoElectronico: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        field: "correo_electronico"
+    },
+    fechaEntrega: {
+        type: DataTypes.DATE,
+        field: "fecha_entrega"
+    },
+    totalOrden: {
+        type: DataTypes.DOUBLE,
+        allowNull: false,
+        field: "total_orden"
     },
 }, {
     sequelize,
-    modelName: "usuarios",
-    tableName: 'Usuarios',
+    modelName: "orden",
+    tableName: 'Orden',
     timestamps: false
 })
 
-module.exports = usuarios
+module.exports = orden
