@@ -1,40 +1,67 @@
 const router = require ("express").Router()
-
-const {faker} = require("@faker-js/faker")
-
+const { verifyToken, verifyRole } = require('../middleware/roleAuth');
 const rol = require("../rol/rol.model")
+const { validateCreate, validateUpdate } = require('../validators/estado.validator');
 
-router.post("/rol", async (req,res) =>{
-    await rol.sync()
+
+router.post("/rol", verifyToken, verifyRole([1, 2]), validateCreate, async (req, res) => {
     const rolData = req.body;
-    console.log('name is: ', rolData)
-
-    const createRol = await rol.create({
-        nombre: rolData.nombre
-    })
-    res.status(200).json({
-        ok: true,
-        status: 201,
-        message: "Created Rol",
-        data: createRol
-    })
+    try {
+        const createRol = await rol.create({
+            nombreRol: rolData.name
+        });
+        res.status(201).json({
+            ok: true,
+            status: 201,
+            message: "Rol creado",
+            data: createRol
+        });
+    } catch (error) {
+        res.status(500).json({
+            ok: false,
+            status: 500,
+            message: "Error al crear el rol",
+            error: error.message
+        });
+    }
 });
 
-router.put("/rol/:rol_id", async (req,res) => {
-    const idrol = req.params.rol_id
+
+
+router.put("/rol/:rol_id", verifyToken, verifyRole([1, 2]), async (req, res) => {
+    const idrol = req.params.rol_id;
     const rolData = req.body;
-    const updateRol = await rol.update({
-        nombre: rolData.nombre
-    }, {
-        where: {
-            idrol: idrol,
-        },
-    });
-    res.status(200).json( {
-        ok:true,
-        status: 200,
-        body: updateRol
-    })
-})
+    try {
+        const updateRol = await rol.update({
+            nombreRol: rolData.nombre
+        }, {
+            where: {
+                idRol: idrol,
+            },
+        });
+        if (updateRol[0] === 0) {
+            return res.status(200).json({
+                ok: true,
+                status: 200,
+                message: "No se realizaron cambios en el rol",
+            });
+        }
+        res.status(200).json({
+            ok: true,
+            status: 200,
+            message: "Rol actualizado",
+            data: updateRol
+        });
+    } catch (error) {
+        res.status(500).json({
+            ok: false,
+            status: 500,
+            message: "Error al actualizar el rol",
+            error: error.message
+        });
+    }
+});
+
+
 
 module.exports = router;
