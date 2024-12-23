@@ -1,8 +1,10 @@
-const express = require('express');
-const router = express.Router();
-const productos = require('../productos/productos.model');
+const router = require("express").Router();
+const productos = require("../productos/productos.model");
+const {verifyToken, verifyRole} = require("../middleware/roleAuth");
+const { validateCreateProducto, validateUpdateProducto } = require('../validators/productos.validator');
 
-router.post("/productos", async (req, res) => {
+
+router.post("/productos", verifyToken, verifyRole([1, 2]), validateCreateProducto, async (req, res) => {
     try {
         const productoData = req.body;
 
@@ -32,7 +34,7 @@ router.post("/productos", async (req, res) => {
     }
 });
 
-router.put("/productos/:idProducto", async (req, res) => {
+router.put("/productos/:idProducto", verifyToken, verifyRole([1, 2]), validateUpdateProducto, async (req, res) => {
     const { idProducto } = req.params;
     const productoData = req.body;
 

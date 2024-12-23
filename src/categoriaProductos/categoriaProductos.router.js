@@ -1,15 +1,17 @@
 const router = require("express").Router();
 const categoriaProductos = require("../categoriaProductos/categoriaProductos.model");
-const { where } = require("sequelize");
+const {verifyToken, verifyRole} = require("../middleware/roleAuth");
+const { validateCategoriaProducto, validateCategoriaProductoUpdate } = require('../validators/categoriaProductos.validator');
 
 
-router.post("/categoriaProductos", async (req, res) => {
+
+router.post("/categoriaProductos", verifyToken, verifyRole([1, 2]), validateCategoriaProducto, async (req, res) => {
     try {
         const categoriaProductosData = req.body;
         const createCategoriaProducto = await categoriaProductos.create({
             usuarios_idusuarios: categoriaProductosData.usuarios_idusuarios,
             nombreCategoriaProducto: categoriaProductosData.nombreCategoriaProducto,
-            estados_idestados: categoriaProductosData.estados_idestados,
+            estados_idestados: categoriaProductosData.idEstado,
             fechaCreacion: categoriaProductosData.fechaCreacion
         });
         res.status(201).json({
@@ -25,16 +27,15 @@ router.post("/categoriaProductos", async (req, res) => {
     }
 });
 
-router.put("/categoriaProductos/:idCategoriaProductos", async (req, res) => {
+router.put("/categoriaProductos/:idCategoriaProductos",  verifyToken, verifyRole([1, 2]), validateCategoriaProductoUpdate, async (req, res) => {
     const idCategoriaProductos = req.params.idCategoriaProductos;
     const categoriaProductosData = req.body;
 
     try {
-        // Actualizar el registro en la tabla CategoriaProductos
         const updateCategoriaProducto = await categoriaProductos.update({
             usuarios_idusuarios: categoriaProductosData.usuarios_idusuarios,
             nombreCategoriaProducto: categoriaProductosData.nombreCategoriaProducto,
-            estados_idestados: categoriaProductosData.estados_idestados,
+            estados_idestados: categoriaProductosData.idEstado,
             fechaCreacion: categoriaProductosData.fechaCreacion
         }, {
             where: {

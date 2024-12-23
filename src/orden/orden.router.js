@@ -1,8 +1,9 @@
 const router = require("express").Router();
 const orden = require("../orden/orden.model");
-const { where } = require("sequelize");
+const { validateOrdenCreate, validateOrdenUpdate } = require('../validators/orden.validator');
+const {verifyToken, verifyRole} = require("../middleware/roleAuth");
 
-router.post("/orden", async (req, res) => {
+router.post("/orden",  verifyToken, verifyRole([1, 2]), validateOrdenCreate, async (req, res) => {
     try {
         const ordenData = req.body;
         console.log(ordenData)
@@ -31,10 +32,11 @@ router.post("/orden", async (req, res) => {
     }
 });
 
-router.put("/orden/:idOrden", async (req, res) => {
+router.put("/orden/:idOrden", verifyToken, verifyRole([1, 2]), validateOrdenUpdate, async (req, res) => {
+    const idOrden = req.params.idOrden;
+    const ordenData = req.body;
     try {
-        const idOrden = req.params.idOrden;
-        const ordenData = req.body;
+
 
         const updateOrden = await orden.update({
             usuarios_idusuarios: ordenData.usuarios_idusuarios,
@@ -51,15 +53,9 @@ router.put("/orden/:idOrden", async (req, res) => {
             }
         });
 
-        if (updateOrden[0] === 0) {
-            return res.status(404).json({
-                message: "Orden no encontrada"
-            });
-        }
-
         res.status(200).json({
             message: "Orden actualizada exitosamente",
-            data: ordenData
+            data: updateOrden
         });
 
     } catch (error) {

@@ -1,8 +1,10 @@
-const express = require('express');
-const router = express.Router();
+const router = require("express").Router();
 const ordenDetalle = require('../ordenDetalle/ordenDetalle.model');
+const {verifyToken, verifyRole} = require("../middleware/roleAuth");
+const { validateCreateOrdenDetalle, validateUpdateOrdenDetalle } = require('../validators/ordenDetalles.validator');
 
-router.post("/ordenDetalle", async (req, res) => {
+
+router.post("/ordenDetalle", verifyToken, verifyRole([1, 2]), validateCreateOrdenDetalle, async (req, res) => {
     try {
         const detalleData = req.body;
 
@@ -27,13 +29,12 @@ router.post("/ordenDetalle", async (req, res) => {
     }
 });
 
-router.put("/ordenDetalles/:idOrdenDetalle", async (req, res) => {
-    const { idOrdenDetalle } = req.params;
+router.put("/ordenDetalle/:idOrden", verifyToken, verifyRole([1, 2]), validateUpdateOrdenDetalle, async (req, res) => {
+    const idOrdenDetalle = req.params.idOrden;
     const ordenDetalleData = req.body;
 
     try {
-        // Actualizar el detalle de la orden
-        const ordenDetalleActualizado = await ordenDetalle.update({
+        const updateDetalle = await ordenDetalle.update({
             idOrden: ordenDetalleData.idOrden,
             idProducto: ordenDetalleData.idProducto,
             cantidadDetalle: ordenDetalleData.cantidadDetalle,
@@ -45,7 +46,7 @@ router.put("/ordenDetalles/:idOrdenDetalle", async (req, res) => {
             }
         });
 
-        if (ordenDetalleActualizado[0] === 0) {
+        if (updateDetalle[0] === 0) {
             return res.status(404).json({
                 message: "Detalle de orden no encontrado",
             });
@@ -53,7 +54,7 @@ router.put("/ordenDetalles/:idOrdenDetalle", async (req, res) => {
 
         res.status(200).json({
             message: "Detalle de orden actualizado exitosamente",
-            data: ordenDetalleActualizado
+            data: updateDetalle
         });
     } catch (error) {
         console.error("Error al actualizar el detalle de orden:", error);
@@ -63,5 +64,6 @@ router.put("/ordenDetalles/:idOrdenDetalle", async (req, res) => {
         });
     }
 });
+
 
 module.exports = router;

@@ -1,15 +1,17 @@
 const router = require("express").Router();
-const { faker } = require("@faker-js/faker");
 const Clientes = require("../clientes/clientes.model");
+const {verifyToken, verifyRole} = require("../middleware/roleAuth");
+const { validateClientesCreate, validateClientesUpdate } = require('../validators/clientes.validator');
 
-router.post("/clientes", async (req, res) => {
+
+router.post("/clientes", verifyToken, verifyRole([1, 2]), validateClientesCreate, async (req, res) => {
     await Clientes.sync();
     const clientesData = req.body;
     try {
         const createCliente = await Clientes.create({
-            razonSocial: clientesData.razon_social,
-            nombreComercial: clientesData.nombre_comercial,
-            direccionEntrega: clientesData.direccion_entrega,
+            razonSocial: clientesData.razonSocial,
+            nombreComercial: clientesData.nombreComercial,
+            direccionEntrega: clientesData.direccionEntrega,
             telefono: clientesData.telefono,
             email: clientesData.email
         });
@@ -20,23 +22,28 @@ router.post("/clientes", async (req, res) => {
             data: createCliente
         });
     } catch (error) {
+        let errorMessage = error.message;
+        if(error.name === 'SequelizeUniqueConstraintError'){
+            errorMessage = "Duplicate entry error: " + error.errors.map(e => e.message).join(', ');
+        }
+
+        console.log("texto de prueba para localizar", error)
         res.status(500).json({
             ok: false,
-            status: 500,
             message: "Error creating client",
-            error: error.message
+            error: errorMessage
         });
     }
 });
 
-router.put("/clientes/:id_cliente", async (req, res) => {
-    const idcliente = req.params.id_cliente;
+router.put("/clientes/:idCliente", verifyToken, verifyRole([1, 2]), validateClientesUpdate, async (req, res) => {
+    const idcliente = req.params.idCliente;
     const clientesData = req.body;
     try {
         const updateCliente = await Clientes.update({
-            razonSocial: clientesData.razon_social,
-            nombreComercial: clientesData.nombre_comercial,
-            direccionEntrega: clientesData.direccion_entrega,
+            razonSocial: clientesData.razonSocial,
+            nombreComercial: clientesData.nombreComercial,
+            direccionEntrega: clientesData.direccionEntrega,
             telefono: clientesData.telefono,
             email: clientesData.email
         }, {

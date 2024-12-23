@@ -1,4 +1,4 @@
-const { Sequelize, Model, DataTypes, STRING} = require ("sequelize")
+const { Sequelize, Model, DataTypes} = require ("sequelize")
 
 const sequelize = require('../db/mysql');
 
