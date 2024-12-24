@@ -40,7 +40,7 @@ const validateCategoriaProductoUpdate = [
     check('nombreCategoriaProducto')
         .exists().withMessage('El campo nombreCategoriaProducto es requerido')
         .not().isEmpty().withMessage('El campo nombreCategoriaProducto no puede estar vacío')
-        .isLength({ min: 3, max: 50 }).withMessage('El campo nombreCategoriaProducto debe tener entre 3 y 50 caracteres'),
+        .isLength({ min: 3, max: 45 }).withMessage('El campo nombreCategoriaProducto debe tener entre 3 y 45 caracteres'),
 
     check('idEstado')
         .exists().withMessage('El campo idEstado es requerido')

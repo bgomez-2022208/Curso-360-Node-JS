@@ -27,8 +27,8 @@ ordenDetalles.init({
         type: DataTypes.INTEGER,
         allowNull: false,
         references: {
-            model: "Orden",
-            key: "idOrden"
+            model: "Productos",
+            key: "idProductos"
         },
         onUpdate: 'CASCADE',
         onDELETE: 'CASCADE',
