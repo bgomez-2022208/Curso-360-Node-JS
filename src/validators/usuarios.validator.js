@@ -12,11 +12,14 @@ const validateUsuariosCreate =[
 
     check('correoElectronico')
         .not().isEmpty().withMessage('El correo electronico es obligatorio')
-        .isEmail().withMessage('El correo electronico no es válido'),
+        .isEmail().withMessage('El correo electronico no es válido')
+        .isLength({ min: 4 }).withMessage('El correo debe tener al menos 4 caracteres')
+        .isLength({ max: 50 }).withMessage('El nombre comercial no puede tener más de 50 caracteres'),
 
     check("nombreCompleto")
         .not().isEmpty().withMessage('El nombre es necesario')
         .isLength({min: 5, max: 75 }).withMessage('El nombre debe contener al menos 5 caracteres'),
+
 
     check('password')
         .not().isEmpty().withMessage('El campo contraseña es requerido')
@@ -29,7 +32,7 @@ const validateUsuariosCreate =[
     check('telefono')
         .not().isEmpty().withMessage('El teléfono es obligatorio')
         .matches(/^[\d\s+-]+$/).withMessage('El teléfono debe contener solo números, espacios o el símbolo +')
-        .isLength({ min: 7, max: 15 }).withMessage('El teléfono debe tener entre 7 y 15 caracteres'),
+        .isLength({ min: 7, max: 45 }).withMessage('El teléfono debe tener entre 7 y 45 caracteres'),
 
     check('fechaNacimiento')
         .isISO8601().withMessage('La fecha de creación debe tener un formato válido')
@@ -55,15 +58,18 @@ const validateUpdateUsuario = [
 
   check('correoElectronico')
       .not().isEmpty().withMessage('El correo electronico es obligatorio')
-      .isEmail().withMessage('El correo electronico no es válido'),
+      .isEmail().withMessage('El correo electronico no es válido')
+      .isLength({ min: 4 }).withMessage('El correo debe tener al menos 4 caracteres')
+      .isLength({ max: 50 }).withMessage('El nombre comercial no puede tener más de 50 caracteres'),
 
   check("nombreCompleto")
       .not().isEmpty().withMessage('El nombre es necesario')
-      .isLength({min: 5, max: 75}).withMessage('El nombre debe contener al menos 5 caracteres'),
+      .isLength({min: 5, max: 75}).withMessage('El nombre debe contener al menos 5 caracteres y maximo 75'),
 
   check('password')
       .not().isEmpty().withMessage('El campo contraseña es requerido')
       .isLength({ min: 8}).withMessage('La contraseña debe tener al menos 3 caracteres')
+      .isLength({ max: 145 }).withMessage('El nombre comercial no puede tener más de 45 caracteres')
       .matches(/[A-Z]/).withMessage('La contraseña debe contener al menos una letra mayúscula')
       .matches(/[a-z]/).withMessage('La contraseña debe contener al menos una letra minúscula')
       .matches(/\d/).withMessage('La contraseña debe contener al menos un número')
@@ -72,7 +78,7 @@ const validateUpdateUsuario = [
   check('telefono')
       .not().isEmpty().withMessage('El teléfono es obligatorio')
       .matches(/^[\d\s+-]+$/).withMessage('El teléfono debe contener solo números, espacios o el símbolo +')
-      .isLength({ min: 7, max: 15 }).withMessage('El teléfono debe tener entre 7 y 15 caracteres'),
+      .isLength({ min: 7, max: 45 }).withMessage('El teléfono debe tener entre 7 y 45 caracteres'),
 
   check('fechaNacimiento')
       .isISO8601().withMessage('La fecha de creación debe tener un formato válido')

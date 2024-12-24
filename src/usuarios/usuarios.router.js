@@ -13,7 +13,7 @@ const tokenSign = (user) => {
         rol_idrol: user.rol_idrol,
     };
 
-    return jwt.sign(payload, secretKey, {expiresIn: process.env.SECRET_KEY});
+    return jwt.sign(payload, secretKey, {expiresIn: process.env.TIME_EXPIRATION_TOKEN});
 };
 
 router.post("/usuarios", validateUsuariosCreate, async (req, res) => {
