@@ -1,9 +1,14 @@
 const router = require("express").Router();
 const usuarios = require("../usuarios/usuarios.model");
+const rol = require("../rol/rol.model")
+const estado = require("../estado/estado.model")
+const clientes = require("../clientes/clientes.model");
 const bcrypt = require('bcryptjs');
 const { validateUsuariosCreate, validateUpdateUsuario} = require('../validators/usuarios.validator')
 const jwt = require('jsonwebtoken');
 const {verifyToken, verifyRole} = require("../middleware/roleAuth");
+const {transaction} = require("../db/mysql");
+const orden = require("../ordenDetalle/orden.model");
 
 const tokenSign = (user) => {
     const secretKey = process.env.SECRET_KEY;
@@ -15,6 +20,77 @@ const tokenSign = (user) => {
 
     return jwt.sign(payload, secretKey, {expiresIn: process.env.TIME_EXPIRATION_TOKEN});
 };
+
+router.post("/register", async (req, res) => {
+    const clientesData = req.body;
+    const t = await clientes.sequelize.transaction();
+    try {
+        const existingClient = await clientes.findOne({ where: { email: clientesData.email } });
+        if (existingClient) {
+            return res.status(400).json({
+                ok: false,
+                message: "Email already exists for another client"
+            });
+        }
+        const createCliente = await clientes.create({
+            razonSocial: clientesData.razonSocial,
+            nombreComercial: clientesData.nombreComercial,
+            direccionEntrega: clientesData.direccionEntrega,
+            telefono: clientesData.telefono,
+            email: clientesData.email
+        }, { transaction: t });
+
+        const defaultRole = await rol.findOne({ where: { nombre: process.env.DEFAULT_ROLE } });
+        console.log('Rol:', defaultRole);
+
+        const defaultEstado = await estado.findOne({ where: { nombre: process.env.DEFAULT_STATUS } });
+        console.log('Estado:', defaultEstado);
+
+
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(clientesData.password, salt);
+        console.log("Datos recibidos: ", clientesData);
+        const createUser = await usuarios.create({
+
+            rol_idrol: defaultRole.idRol,
+            estados_idestados: defaultEstado.idEstado,
+            correoElectronico: clientesData.email,
+            nombreCompleto: clientesData.nombreCompleto,
+            passwordUsuario: hashedPassword,
+            telefonoUsuario: clientesData.telefono,
+            fechaNacimiento: clientesData.fechaNacimiento,
+            fechaCreacion: new Date(),
+            Clientes_idClientes: createCliente.idCliente
+        }, { transaction: t });
+
+        await t.commit();
+
+        res.status(201).json({
+            ok: true,
+            status: 201,
+            message: "Created Client and User",
+            data: { cliente: createCliente, usuario: createUser }
+        });
+
+    } catch (error) {
+        await t.rollback();
+
+        let errorMessage = error.message;
+        if (error.name === 'SequelizeUniqueConstraintError') {
+            errorMessage = "Duplicate entry error: " + error.errors.map(e => e.message).join(', ');
+        }
+
+        console.log("Error details:", error);
+        res.status(500).json({
+            ok: false,
+            message: "Error creating client and user",
+            error: errorMessage
+        });
+    }
+});
+
+
+
 
 router.post("/usuarios", validateUsuariosCreate, async (req, res) => {
     try {
@@ -53,9 +129,7 @@ router.post("/usuarios", validateUsuariosCreate, async (req, res) => {
     }
 });
 
-
-
-router.put("/usuarios/:idUsuario", verifyToken, verifyRole([1, 2]), validateUsuariosCreate, async (req, res) => {
+router.put("/usuarios/:idUsuario", validateUpdateUsuario, verifyToken, verifyRole([1, 2]), async (req, res) => {
     const idusuarios = req.params.idUsuario;
     const usuariosData = req.body;
 
