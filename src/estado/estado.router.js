@@ -62,4 +62,8 @@ router.put("/estate/:idEstado", verifyToken, verifyRole([1, 2]), validateUpdate,
     }
 });
 
+router.get("/estado", (req, res) => {
+    res.json({ message: 'Estado de la API' });
+});
+
 module.exports = router;

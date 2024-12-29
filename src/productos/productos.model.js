@@ -49,7 +49,7 @@ productos.init({
         field: "codigo"
     },
     stockProducto: {
-        type: DataTypes.STRING,
+        type: DataTypes.INTEGER,
         allowNull: false,
         field: "stock"
     },

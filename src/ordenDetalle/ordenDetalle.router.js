@@ -1,6 +1,8 @@
 const router = require("express").Router();
 const ordenDetalle = require('../ordenDetalle/ordenDetalle.model');
 const orden = require("./orden.model");
+const productos = require("../productos/productos.model");
+
 const {verifyToken, verifyRole} = require("../middleware/roleAuth");
 const { validateOrdenCreate } = require('../validators/orden.validator');
 
@@ -41,7 +43,8 @@ router.post("/ordenDetalle", verifyToken, verifyRole([1, 2]), validateOrdenCreat
             const { usuarios_idusuarios,
                 estados_idestados,
                 nombreCompleto,
-                ordenDireccion, ordenTelefono,
+                ordenDireccion,
+                ordenTelefono,
                 correoElectronico,
                 fechaEntrega,
                 totalOrden,
@@ -52,13 +55,16 @@ router.post("/ordenDetalle", verifyToken, verifyRole([1, 2]), validateOrdenCreat
             }
 
             const nuevaOrden = await orden.create(
-                { idUsuarios: usuarios_idusuarios,
+                {
+                    idUsuarios: usuarios_idusuarios,
                     idEstados: estados_idestados,
-                    nombreCompleto, ordenDireccion,
+                    nombreCompleto,
+                    ordenDireccion,
                     ordenTelefono,
                     correoElectronico,
                     fechaEntrega,
-                    totalOrden },
+                    totalOrden
+                },
                 { transaction: t }
             );
 
@@ -69,14 +75,40 @@ router.post("/ordenDetalle", verifyToken, verifyRole([1, 2]), validateOrdenCreat
 
             await ordenDetalle.bulkCreate(detalles, { transaction: t });
 
+            for (const det of detalle) {
+                const producto = await productos.findByPk(det.idProducto, { transaction: t });
+
+                if (!producto) {
+                    throw new Error(`El producto con ID ${det.idProducto} no existe.`);
+                }
+
+                if (parseFloat(producto.stockProducto) < det.cantidadDetalle) {
+                    throw new Error(`El producto con ID ${det.idProducto} no tiene suficiente stock.`);
+                }
+
+                const nuevoStock = parseFloat(producto.stockProducto) - det.cantidadDetalle;
+                await producto.update(
+                    { stockProducto: nuevoStock.toString() },
+                    { transaction: t }
+                );
+            }
+
             await t.commit();
-            res.status(201).json({ message: "Orden y detalles creados exitosamente.", orden: nuevaOrden, detalles });
+            res.status(201).json({
+                message: "Orden y detalles creados exitosamente.",
+                orden: nuevaOrden,
+                detalles
+            });
         } catch (error) {
             await t.rollback();
             console.error("Error al crear la orden y detalles:", error);
-            res.status(500).json({ message: "Hubo un error al crear la orden.", error: error.message });
+            res.status(500).json({
+                message: "Hubo un error al crear la orden.",
+                error: error.message
+            });
         }
     }
 );
+
 
 module.exports = router;
