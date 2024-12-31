@@ -18,7 +18,7 @@ router.post("/productos", verifyToken, verifyRole([1, 2]), validateCreateProduct
             estados_idestados: productoData.estados_idestados,
             precioProducto: productoData.precioProducto,
             fechaCreacion: productoData.fechaCreacion,
-            fotoProducto: productoData.fotoProducto
+            fotoProducto: productoData.fotoProducto ? Buffer.from(productoData.fotoProducto, 'base64') : null,
         });
 
         res.status(201).json({
@@ -49,7 +49,7 @@ router.put("/productos/:idProducto", verifyToken, verifyRole([1, 2]), validateUp
             estados_idestados: productoData.estados_idestados,
             precioProducto: productoData.precioProducto,
             fechaCreacion: productoData.fechaCreacion,
-            fotoProducto: productoData.fotoProducto
+            fotoProducto: productoData.fotoProducto ? Buffer.from(productoData.fotoProducto, 'base64') : null,
         }, {
             where: {
                 idProductos: idProducto
@@ -67,6 +67,44 @@ router.put("/productos/:idProducto", verifyToken, verifyRole([1, 2]), validateUp
             error: error.message
         });
     }
+});
+
+router.get('/productos', async (req, res) => {
+    try {
+        const productosList = await productos.findAll();
+
+        const productosConImagenBase64 = productosList.map(producto => {
+            const productoJSON = producto.toJSON();
+            if (productoJSON.fotoProducto) {
+                productoJSON.fotoProducto = productoJSON.fotoProducto.toString('base64');
+            }
+            return productoJSON;
+        });
+
+        res.status(200).json(productosConImagenBase64);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error al obtener los productos', error });
+    }
+});
+
+router.get('/productos', async (req, res) => {
+    try {
+        const productosList = await productos.findAll();
+        const productosConImagenBase64 = productosList.map(producto => {
+            return {
+                ...producto.toJSON(),
+                fotoProducto: producto.fotoProducto ? Buffer.from(producto.fotoProducto).toString('base64' ) : null
+            };
+        });
+        res.status(200).json({
+            message: 'productos listados con exito',
+            data: productosConImagenBase64
+        })
+    }catch (error) {
+            console.error(error);
+            res.status(500).json({ message: 'Error al obtener los productos', error });
+        }
 });
 
 module.exports = router;

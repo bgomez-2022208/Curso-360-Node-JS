@@ -67,8 +67,6 @@ router.post("/register", async (req, res) => {
 
         res.status(201).json({
             ok: true,
-            status: 201,
-            message: "Created Client and User",
             data: { cliente: createCliente, usuario: createUser }
         });
 

@@ -43,10 +43,6 @@ const validateCreateProducto = [
         .isISO8601().withMessage('La fecha de creación debe tener un formato válido')
         .not().isEmpty().withMessage('La fecha de creación es obligatoria'),
 
-    check('fotoProducto')
-        .optional()
-        .isLength({ max: 255 }).withMessage('La foto no puede exceder los 255 caracteres en base64'),
-
     (req, res, next) => {
         validateResult(req, res, next);
     }
@@ -93,10 +89,6 @@ const validateUpdateProducto = [
     check('fechaCreacion')
         .optional()
         .isISO8601().withMessage('La fecha de creación debe tener un formato válido'),
-
-    check('fotoProducto')
-        .optional()
-        .isLength({ max: 255 }).withMessage('La foto no puede exceder los 255 caracteres en base64'),
 
     (req, res, next) => {
         validateResult(req, res, next);
