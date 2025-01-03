@@ -43,7 +43,7 @@ const validateOrdenCreate = [
 
     check('totalOrden')
         .exists().withMessage('El total de la orden es obligatorio')
-        .isDecimal({ decimal_digits: '2' }).withMessage('El total de la orden debe ser un número decimal con hasta 2 decimales')
+        .isDecimal().withMessage('El total de la orden debe ser un número decimal')
         .isFloat({ min: 1 }).withMessage('El total de la orden debe ser mayor o igual a 0'),
 
     check('detalle')

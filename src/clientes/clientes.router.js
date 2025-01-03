@@ -63,4 +63,30 @@ router.put("/clientes/:idCliente", verifyToken, verifyRole([1, 2]), validateClie
     }
 });
 
+router.get("/clientes/:idCliente", verifyToken, verifyRole([1, 2]), async (req, res) => {
+    const idcliente = req.params.idCliente;
+    try {
+        const cliente = await Clientes.findOne({
+            where: {
+                idcliente: idcliente,
+            },
+        });
+        if (!cliente) {
+            return res.status(404).json({
+                message: "Cliente no encontrado",
+            });
+        }
+        res.status(200).json({
+            message: "Cliente encontrado",
+            body: cliente
+        });
+    } catch (error) {
+        res.status(500).json({
+            message: "Error fetching client",
+            error: error.message
+        });
+    }
+});
+
+
 module.exports = router;

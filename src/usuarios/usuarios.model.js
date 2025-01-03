@@ -1,82 +1,79 @@
-const { Sequelize, Model, DataTypes} = require ("sequelize")
-
+const { Model, DataTypes } = require("sequelize");
 const sequelize = require('../db/mysql');
+const clientes = require('../clientes/clientes.model');
 
 class usuarios extends Model {}
 
 usuarios.init({
-    idUsuarios:{
+    idUsuario: {
         type: DataTypes.INTEGER,
         autoIncrement: true,
         primaryKey: true,
         field: "idusuarios"
     },
-    rol_idrol:{
+    rol_idrol: {
         type: DataTypes.INTEGER,
         allowNull: false,
         references: {
-            model: 'Rol',
-            key: "idrol"
-        },
-        onUpdate: 'CASCADE',
-        onDELETE: 'CASCADE'
+            model: "Rol",
+            key: "idRol"
+        }
     },
     estados_idestados: {
         type: DataTypes.INTEGER,
         allowNull: false,
         references: {
             model: "Estados",
-            key: "idestados"
-        },
-        onUpdate: 'CASCADE',
-        onDELETE: 'CASCADE'
+            key: "estados_idestados"
+        }
     },
     correoElectronico: {
         type: DataTypes.STRING,
         allowNull: false,
-        field: "correo_electronico"
+        unique: true,
+        field: 'correo_electronico',
     },
     nombreCompleto: {
         type: DataTypes.STRING,
         allowNull: false,
-        field: "nombre_completo"
+        field: 'nombre_completo',
     },
     passwordUsuario: {
         type: DataTypes.STRING,
         allowNull: false,
-        field: "password"
+        field: 'password',
     },
     telefonoUsuario: {
         type: DataTypes.STRING,
         allowNull: false,
-        field: "telefono"
+        field: 'telefono',
     },
     fechaNacimiento: {
-        type: DataTypes.DATE,
+        type: DataTypes.DATEONLY,
         allowNull: false,
-        field: "fecha_nacimiento"
+        field: 'fecha_nacimiento',
     },
     fechaCreacion: {
         type: DataTypes.DATE,
         allowNull: false,
+        defaultValue: sequelize.NOW,
         field: 'fecha_creacion',
-        defaultValue: Sequelize.NOW
     },
-    Clientes_idClientes:{
+    clientes_idClientes: {
         type: DataTypes.INTEGER,
         allowNull: false,
         references: {
             model: "Clientes",
-            key: "idestados"
-        },
-        onUpdate: 'CASCADE',
-        onDELETE: 'CASCADE'
-    },
+            key: "idCliente"
+        }
+    }
 }, {
     sequelize,
     modelName: "usuarios",
     tableName: 'Usuarios',
     timestamps: false
-})
+});
 
-module.exports = usuarios
+usuarios.belongsTo(clientes, { foreignKey: 'Clientes_idClientes', as: 'cliente' });
+
+module.exports = usuarios;

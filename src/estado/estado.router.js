@@ -4,27 +4,27 @@ const { validateCreate, validateUpdate } = require('../validators/estado.validat
 const estado = require("../estado/estado.model")
 
 router.post('/estate', verifyToken, verifyRole([1, 2]), validateCreate, async (req, res) => {
-        const estadoData = req.body;
-        try {
-            const createEstado = await estado.create({
-                nombreEstado: estadoData.name
-            });
-            res.status(201).json({
-                ok: true,
-                status: 201,
-                message: "Estado Creado",
-                data: createEstado
-            });
-        } catch (error) {
-            res.status(500).json({
-                ok: false,
-                status: 500,
-                message: "Error al crear el estado",
-                error: error.message
-            });
-        }
+    const estadoData = req.body;
+    try {
+        const createEstado = await estado.create({
+            nombreEstado: estadoData.name
+        });
+        res.status(201).json({
+            ok: true,
+            status: 201,
+            message: "Estado Creado",
+            data: createEstado
+        });
+    } catch (error) {
+        console.error('Error creating estado:', error);
+        res.status(500).json({
+            ok: false,
+            status: 500,
+            message: "Error al crear el estado",
+            error: error.message
+        });
     }
-);
+});
 
 router.put("/estate/:idEstado", verifyToken, verifyRole([1, 2]), validateUpdate, async (req, res) => {
     const idEstados = req.params.idEstado;

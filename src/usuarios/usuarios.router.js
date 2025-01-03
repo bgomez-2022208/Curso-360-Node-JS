@@ -7,18 +7,17 @@ const bcrypt = require('bcryptjs');
 const { validateUsuariosCreate, validateUpdateUsuario} = require('../validators/usuarios.validator')
 const jwt = require('jsonwebtoken');
 const {verifyToken, verifyRole} = require("../middleware/roleAuth");
-const {transaction} = require("../db/mysql");
 const orden = require("../ordenDetalle/orden.model");
 
 const tokenSign = (user) => {
     const secretKey = process.env.SECRET_KEY;
     const payload = {
-        idUsuarios: user.idUsuarios,
+        idUsuarios: user.idUsuario,
         correoElectronico: user.correoElectronico,
         rol_idrol: user.rol_idrol,
     };
 
-    return jwt.sign(payload, secretKey, {expiresIn: process.env.TIME_EXPIRATION_TOKEN});
+    return jwt.sign(payload, secretKey, { expiresIn: process.env.TIME_EXPIRATION_TOKEN });
 };
 
 router.post("/register", async (req, res) => {
@@ -127,7 +126,7 @@ router.post("/usuarios", validateUsuariosCreate, async (req, res) => {
     }
 });
 
-router.put("/usuarios/:idUsuario", validateUpdateUsuario, verifyToken, verifyRole([1, 2]), async (req, res) => {
+router.put("/usuarios/:idUsuario", validateUpdateUsuario, verifyRole([1, 2]),verifyToken, async (req, res) => {
     const idusuarios = req.params.idUsuario;
     const usuariosData = req.body;
 
@@ -181,6 +180,45 @@ router.post("/login", async (req, res) => {
         res.status(500).send({ message: 'Error en el servidor' });
     }
 });
+
+router.get('/usuarios/:idUsuarios', async (req, res) => {
+    const idUsuarios = req.params.idUsuarios;
+
+    console.log('ID recibido del frontend:', idUsuarios);
+
+    try {
+        const usuario = await usuarios.findOne({
+            where: { idusuarios: idUsuarios },
+            include: {
+                model: clientes,
+                as: 'cliente',
+                attributes: ['razon_social', 'nombre_comercial', 'direccion_entrega', 'telefono', 'email'],
+            },
+        });
+
+        if (!usuario) {
+            return res.status(404).json({
+                message: "Usuario no encontrado"
+            });
+        }
+
+        res.status(200).json(usuario);
+    } catch (error) {
+        console.error('Error al obtener el usuario:', error);
+        res.status(500).json({
+            message: "Error interno del servidor",
+            error: error.message
+        });
+    }
+});
+
+
+
+
+
+
+
+
 
 
 module.exports = router;
