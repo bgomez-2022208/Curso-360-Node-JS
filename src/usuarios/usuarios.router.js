@@ -8,6 +8,8 @@ const { validateUsuariosCreate, validateUpdateUsuario} = require('../validators/
 const jwt = require('jsonwebtoken');
 const {verifyToken, verifyRole} = require("../middleware/roleAuth");
 const orden = require("../ordenDetalle/orden.model");
+const ROLE_ADMIN = parseInt(process.env.ROLE_ADMIN);
+const ROLE_USER = parseInt(process.env.ROLE_USER);
 
 const tokenSign = (user) => {
     const secretKey = process.env.SECRET_KEY;
@@ -59,7 +61,7 @@ router.post("/register", async (req, res) => {
             telefonoUsuario: clientesData.telefono,
             fechaNacimiento: clientesData.fechaNacimiento,
             fechaCreacion: new Date(),
-            Clientes_idClientes: createCliente.idCliente
+            clientes_idClientes: createCliente.idCliente
         }, { transaction: t });
 
         await t.commit();
@@ -126,7 +128,7 @@ router.post("/usuarios", validateUsuariosCreate, async (req, res) => {
     }
 });
 
-router.put("/usuarios/:idUsuario", validateUpdateUsuario, verifyRole([1, 2]),verifyToken, async (req, res) => {
+router.put("/usuarios/:idUsuario", validateUpdateUsuario, verifyRole([ROLE_ADMIN, ROLE_USER]), verifyToken, async (req, res) => {
     const idusuarios = req.params.idUsuario;
     const usuariosData = req.body;
 
@@ -212,13 +214,47 @@ router.get('/usuarios/:idUsuarios', async (req, res) => {
     }
 });
 
+router.get('/usuarios', async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const pageSize = parseInt(req.query.pageSize) || 10;
+        const offset = (page - 1) * pageSize;
+        const limit = pageSize;
 
+        const usuariosList = await usuarios.findAll({
+            include: {
+                model: clientes,
+                as: 'cliente',
+                attributes: ['razonSocial', 'nombreComercial', 'direccionEntrega', 'telefono', 'email'],
+            },
+            limit: limit,
+            offset: offset,
+        });
 
+        if (!usuariosList || usuariosList.length === 0) {
+            return res.status(404).json({
+                message: "No se encontraron usuarios"
+            });
+        }
 
+        const totalUsuarios = await usuarios.count();
 
-
-
-
-
-
+        res.status(200).json({
+            message: "Usuarios obtenidos exitosamente.",
+            usuarios: usuariosList,
+            pagination: {
+                total: totalUsuarios,
+                page: page,
+                pageSize: pageSize,
+                totalPages: Math.ceil(totalUsuarios / pageSize),
+            },
+        });
+    } catch (error) {
+        console.error('Error al obtener los usuarios:', error);
+        res.status(500).json({
+            message: "Error interno del servidor",
+            error: error.message
+        });
+    }
+});
 module.exports = router;

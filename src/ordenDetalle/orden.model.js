@@ -1,9 +1,8 @@
-const { Sequelize, Model, DataTypes, STRING} = require ("sequelize")
-
+const { Sequelize, Model, DataTypes } = require("sequelize");
 const sequelize = require('../db/mysql');
+const ordenDetalle = require('./ordenDetalle.model');
 
-class orden extends Model {
-}
+class orden extends Model {}
 
 orden.init({
     idOrden: {
@@ -74,6 +73,11 @@ orden.init({
     modelName: "orden",
     tableName: 'Orden',
     timestamps: false
-})
+});
 
-module.exports = orden
+orden.hasMany(ordenDetalle, {
+    foreignKey: 'idOrden',   // La clave foránea en ordenDetalle
+    as: 'detalles'           // Alias para la relación
+});
+
+module.exports = orden;

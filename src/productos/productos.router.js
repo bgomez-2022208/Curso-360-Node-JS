@@ -1,23 +1,27 @@
 const router = require("express").Router();
 const productos = require("../productos/productos.model");
 const {verifyToken, verifyRole} = require("../middleware/roleAuth");
+const categoriaProductos = require("../categoriaProductos/categoriaProductos.model");
 const { validateCreateProducto, validateUpdateProducto } = require('../validators/productos.validator');
+const ROLE_ADMIN = parseInt(process.env.ROLE_ADMIN);
+const ROLE_USER = parseInt(process.env.ROLE_USER);
 
-
-router.post("/productos", verifyToken, verifyRole([1, 2]), validateCreateProducto, async (req, res) => {
+router.post("/crearProductos", verifyToken, verifyRole([ROLE_ADMIN, ROLE_USER]), validateCreateProducto, async (req, res) => {
     try {
         const productoData = req.body;
+        const { id } = req.user;
+        const currentDate = new Date();
 
         const nuevoProducto = await productos.create({
             idCategoriaProductos: productoData.idCategoriaProductos,
-            idUsuarios: productoData.idUsuarios,
+            idUsuarios: id,
             nombreProducto: productoData.nombreProducto,
             marcaProducto: productoData.marcaProducto,
             codigoProducto: productoData.codigoProducto,
             stockProducto: productoData.stockProducto,
             estados_idestados: productoData.estados_idestados,
             precioProducto: productoData.precioProducto,
-            fechaCreacion: productoData.fechaCreacion,
+            fechaCreacion: currentDate,
             fotoProducto: productoData.fotoProducto ? Buffer.from(productoData.fotoProducto, 'base64') : null,
         });
 
@@ -34,21 +38,20 @@ router.post("/productos", verifyToken, verifyRole([1, 2]), validateCreateProduct
     }
 });
 
-router.put("/productos/:idProducto", verifyToken, verifyRole([1, 2]), validateUpdateProducto, async (req, res) => {
+router.put("/productos/:idProducto",verifyToken, verifyRole([ROLE_ADMIN, ROLE_USER]), validateUpdateProducto, async (req, res) => {
     const { idProducto } = req.params;
     const productoData = req.body;
-
+    const { id } = req.user;
     try {
         const productoActualizado = await productos.update({
             idCategoriaProductos: productoData.idCategoriaProductos,
-            idUsuarios: productoData.idUsuarios,
+            idUsuarios: id,
             nombreProducto: productoData.nombreProducto,
             marcaProducto: productoData.marcaProducto,
             codigoProducto: productoData.codigoProducto,
             stockProducto: productoData.stockProducto,
             estados_idestados: productoData.estados_idestados,
             precioProducto: productoData.precioProducto,
-            fechaCreacion: productoData.fechaCreacion,
             fotoProducto: productoData.fotoProducto ? Buffer.from(productoData.fotoProducto, 'base64') : null,
         }, {
             where: {
@@ -88,23 +91,45 @@ router.get('/productos', async (req, res) => {
     }
 });
 
-router.get('/productos', async (req, res) => {
+
+router.get('/Obtenerproductos', async (req, res) => {
     try {
-        const productosList = await productos.findAll();
+        const page = parseInt(req.query.page) || 1;
+        const pageSize = parseInt(req.query.pageSize) || 10;
+        const offset = (page - 1) * pageSize;
+        const limit = pageSize;
+
+        const { count, rows: productosList } = await productos.findAndCountAll({
+            offset: offset,
+            limit: limit,
+            include: [{
+                model: categoriaProductos,
+                attributes: ['nombreCategoriaProducto']
+            }]
+        });
+
         const productosConImagenBase64 = productosList.map(producto => {
+            const productoJSON = producto.toJSON();
             return {
-                ...producto.toJSON(),
-                fotoProducto: producto.fotoProducto ? Buffer.from(producto.fotoProducto).toString('base64' ) : null
+                ...productoJSON,
+                fotoProducto: productoJSON.fotoProducto ? Buffer.from(productoJSON.fotoProducto).toString('base64') : null,
+                nombreCategoria: productoJSON.categoriaProducto ? productoJSON.categoriaProducto.nombreCategoriaProducto : null
             };
         });
         res.status(200).json({
-            message: 'productos listados con exito',
-            data: productosConImagenBase64
-        })
-    }catch (error) {
-            console.error(error);
-            res.status(500).json({ message: 'Error al obtener los productos', error });
-        }
+            message: 'Productos listados con éxito',
+            data: productosConImagenBase64,
+            pagination: {
+                total: count,
+                page: page,
+                pageSize: pageSize,
+                totalPages: Math.ceil(count / pageSize),
+            },
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error al obtener los productos', error });
+    }
 });
 
 module.exports = router;

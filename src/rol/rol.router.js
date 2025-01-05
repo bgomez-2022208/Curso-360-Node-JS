@@ -2,9 +2,10 @@ const router = require ("express").Router()
 const { verifyToken, verifyRole } = require('../middleware/roleAuth');
 const rol = require("../rol/rol.model")
 const { validateCreate, validateUpdate } = require('../validators/estado.validator');
+const ROLE_ADMIN = parseInt(process.env.ROLE_ADMIN);
+const ROLE_USER = parseInt(process.env.ROLE_USER);
 
-
-router.post("/rol", verifyToken, verifyRole([1, 2]), validateCreate, async (req, res) => {
+router.post("/rol", verifyToken, verifyRole([ROLE_ADMIN, ROLE_USER]), async (req, res) => {
     const rolData = req.body;
     try {
         const createRol = await rol.create({
@@ -28,7 +29,7 @@ router.post("/rol", verifyToken, verifyRole([1, 2]), validateCreate, async (req,
 
 
 
-router.put("/rol/:rol_id", verifyToken, verifyRole([1, 2]), async (req, res) => {
+router.put("/rol/:rol_id", verifyToken, verifyRole([ROLE_ADMIN, ROLE_USER]), async (req, res) => {
     const idrol = req.params.rol_id;
     const rolData = req.body;
     try {

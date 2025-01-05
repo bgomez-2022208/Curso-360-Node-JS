@@ -31,7 +31,7 @@ const validateOrdenCreate = [
         .isLength({max: 75}).withMessage('El correo electrónico no puede exceder los 75 caracteres'),
 
     check('fechaEntrega')
-        .exists().withMessage('La fecha de entrega es obligatoria')
+        .optional({ nullable: true })
         .isISO8601().withMessage('La fecha de entrega debe ser una fecha válida')
         .custom((value) => {
             const now = new Date();

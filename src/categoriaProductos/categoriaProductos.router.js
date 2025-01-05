@@ -2,10 +2,11 @@ const router = require("express").Router();
 const categoriaProductos = require("../categoriaProductos/categoriaProductos.model");
 const {verifyToken, verifyRole} = require("../middleware/roleAuth");
 const { validateCategoriaProducto, validateCategoriaProductoUpdate } = require('../validators/categoriaProductos.validator');
+const ROLE_ADMIN = parseInt(process.env.ROLE_ADMIN);
+const ROLE_USER = parseInt(process.env.ROLE_USER);
 
 
-
-router.post("/categoriaProductos", verifyToken, verifyRole([1, 2]), validateCategoriaProducto, async (req, res) => {
+router.post("/categoriaProductos", verifyToken, verifyRole([ROLE_ADMIN, ROLE_USER]), validateCategoriaProducto, async (req, res) => {
     try {
         const categoriaProductosData = req.body;
         const createCategoriaProducto = await categoriaProductos.create({
@@ -27,7 +28,7 @@ router.post("/categoriaProductos", verifyToken, verifyRole([1, 2]), validateCate
     }
 });
 
-router.put("/categoriaProductos/:idCategoriaProductos",  verifyToken, verifyRole([1, 2]), validateCategoriaProductoUpdate, async (req, res) => {
+router.put("/categoriaProductos/:idCategoriaProductos",  verifyToken, verifyRole([ROLE_ADMIN, ROLE_USER]), validateCategoriaProductoUpdate, async (req, res) => {
     const idCategoriaProductos = req.params.idCategoriaProductos;
     const categoriaProductosData = req.body;
 
@@ -57,6 +58,19 @@ router.put("/categoriaProductos/:idCategoriaProductos",  verifyToken, verifyRole
         console.error("Error al actualizar la categoría de producto:", error);
         res.status(500).json({
             message: "Hubo un error al actualizar la categoría de producto",
+            error: error.message
+        });
+    }
+});
+
+router.get("/categorias", async (req, res) => {
+    try {
+        const categorias = await categoriaProductos.findAll();
+        res.status(200).json(categorias);
+    } catch (error) {
+        console.error("Error al obtener las categorías:", error);
+        res.status(500).json({
+            message: "Hubo un error al obtener las categorías",
             error: error.message
         });
     }

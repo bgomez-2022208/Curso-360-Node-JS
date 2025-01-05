@@ -2,9 +2,10 @@ const router = require("express").Router();
 const Clientes = require("../clientes/clientes.model");
 const {verifyToken, verifyRole} = require("../middleware/roleAuth");
 const { validateClientesCreate, validateClientesUpdate } = require('../validators/clientes.validator');
+const ROLE_ADMIN = parseInt(process.env.ROLE_ADMIN);
+const ROLE_USER = parseInt(process.env.ROLE_USER);
 
-
-router.post("/clientes", verifyToken, verifyRole([1, 2]), validateClientesCreate, async (req, res) => {
+router.post("/clientes", verifyToken, verifyRole([ROLE_ADMIN, ROLE_USER]), validateClientesCreate, async (req, res) => {
     await Clientes.sync();
     const clientesData = req.body;
     try {
@@ -36,7 +37,7 @@ router.post("/clientes", verifyToken, verifyRole([1, 2]), validateClientesCreate
     }
 });
 
-router.put("/clientes/:idCliente", verifyToken, verifyRole([1, 2]), validateClientesUpdate, async (req, res) => {
+router.put("/clientes/:idCliente", verifyToken, verifyRole([ROLE_ADMIN, ROLE_USER]), validateClientesUpdate, async (req, res) => {
     const idcliente = req.params.idCliente;
     const clientesData = req.body;
     try {
@@ -63,7 +64,7 @@ router.put("/clientes/:idCliente", verifyToken, verifyRole([1, 2]), validateClie
     }
 });
 
-router.get("/clientes/:idCliente", verifyToken, verifyRole([1, 2]), async (req, res) => {
+router.get("/clientes/:idCliente", verifyToken, verifyRole([ROLE_ADMIN, ROLE_USER]), async (req, res) => {
     const idcliente = req.params.idCliente;
     try {
         const cliente = await Clientes.findOne({
