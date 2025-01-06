@@ -88,26 +88,95 @@ router.post("/register", async (req, res) => {
     }
 });
 
+router.put("/editarCliente/:idUsuario", verifyToken, verifyRole([ROLE_ADMIN, ROLE_USER]), async (req, res) => {
+    const idUsuario = req.params.idUsuario;
+    const clientesData = req.body;
+    const t = await clientes.sequelize.transaction();
 
+    try {
+        const existingUser = await usuarios.findByPk(idUsuario);
+        if (!existingUser) {
+            return res.status(404).json({
+                ok: false,
+                message: "User not found"
+            });
+        }
 
+        const idCliente = existingUser.clientes_idClientes;
+        const existingClient = await clientes.findByPk(idCliente);
+        if (!existingClient) {
+            return res.status(404).json({
+                ok: false,
+                message: "Client not found"
+            });
+        }
+
+        await clientes.update({
+            razonSocial: clientesData.razonSocial,
+            nombreComercial: clientesData.nombreComercial,
+            direccionEntrega: clientesData.direccionEntrega,
+            telefono: clientesData.telefono,
+            email: clientesData.email
+        }, {
+            where: { idCliente: idCliente },
+            transaction: t
+        });
+
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(clientesData.password, salt);
+
+        await usuarios.update({
+            correoElectronico: clientesData.email,
+            nombreCompleto: clientesData.nombreCompleto,
+            passwordUsuario: hashedPassword,
+            telefonoUsuario: clientesData.telefono,
+            fechaNacimiento: clientesData.fechaNacimiento
+        }, {
+            where: { idUsuarios: idUsuario },
+            transaction: t
+        });
+
+        await t.commit();
+
+        res.status(200).json({
+            ok: true,
+            message: "Client and user updated successfully"
+        });
+
+    } catch (error) {
+        await t.rollback();
+
+        let errorMessage = error.message;
+        if (error.name === 'SequelizeUniqueConstraintError') {
+            errorMessage = "Duplicate entry error: " + error.errors.map(e => e.message).join(', ');
+        }
+
+        console.log("Error details:", error);
+        res.status(500).json({
+            ok: false,
+            message: "Error updating client and user",
+            error: errorMessage
+        });
+    }
+});
 
 router.post("/usuarios", validateUsuariosCreate, async (req, res) => {
     try {
         const usuariosData = req.body;
+        const currentDate = new Date();
 
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(usuariosData.password, salt);
 
         const createUsuarios = await usuarios.create({
-            rol_idrol: usuariosData.rol_idrol,
-            estados_idestados: usuariosData.idEstados,
+            rol_idrol: 1,
+            estados_idestados: 1,
             correoElectronico: usuariosData.correoElectronico,
             nombreCompleto: usuariosData.nombreCompleto,
             passwordUsuario: hashedPassword,
             telefonoUsuario: usuariosData.telefono,
             fechaNacimiento: usuariosData.fechaNacimiento,
-            fechaCreacion: new Date(),
-            Clientes_idClientes: usuariosData.Clientes_idClientes
+            fechaCreacion: currentDate,
         });
 
         res.status(201).json({
@@ -128,19 +197,16 @@ router.post("/usuarios", validateUsuariosCreate, async (req, res) => {
     }
 });
 
-router.put("/usuarios/:idUsuario", validateUpdateUsuario, verifyRole([ROLE_ADMIN, ROLE_USER]), verifyToken, async (req, res) => {
+router.put("/usuarios/:idUsuario", validateUpdateUsuario, verifyToken, verifyRole([ROLE_ADMIN, ROLE_USER]),  async (req, res) => {
     const idusuarios = req.params.idUsuario;
     const usuariosData = req.body;
 
     const updateUsuarios = await usuarios.update({
-        rol_idrol: usuariosData.rol_idrol,
-        estados_idestados: usuariosData.idEstado,
-        correoElectronico: usuariosData.correoElectronico,
+        estados_idestados: usuariosData.idEstados,
         nombreCompleto: usuariosData.nombreCompleto,
         passwordUsuario: usuariosData.password,
         telefonoUsuario: usuariosData.telefono,
         fechaNacimiento: usuariosData.fechaNacimiento,
-        Clientes_idClientes: usuariosData.Clientes_idClientes
     }, {
         where: {
             idUsuarios: idusuarios
@@ -222,11 +288,23 @@ router.get('/usuarios', async (req, res) => {
         const limit = pageSize;
 
         const usuariosList = await usuarios.findAll({
-            include: {
-                model: clientes,
-                as: 'cliente',
-                attributes: ['razonSocial', 'nombreComercial', 'direccionEntrega', 'telefono', 'email'],
-            },
+            include: [
+                {
+                    model: clientes,
+                    as: 'cliente',
+                    attributes: ['razonSocial', 'nombreComercial', 'direccionEntrega', 'telefono', 'email'],
+                },
+                {
+                    model: rol,
+                    as: 'rol',
+                    attributes: ['nombreRol'],
+                },
+                {
+                    model: estado,
+                    as: 'estado',
+                    attributes: ['nombreEstado'],
+                }
+            ],
             limit: limit,
             offset: offset,
         });

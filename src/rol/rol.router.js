@@ -63,6 +63,17 @@ router.put("/rol/:rol_id", verifyToken, verifyRole([ROLE_ADMIN, ROLE_USER]), asy
     }
 });
 
-
+router.get("/roles", async (req, res) => {
+    try {
+        const roles = await rol.findAll();
+        res.status(200).json(roles);
+    } catch (error) {
+        console.error("Error al obtener los roles:", error);
+        res.status(500).json({
+            message: "Hubo un error al obtener los roles",
+            error: error.message
+        });
+    }
+});
 
 module.exports = router;

@@ -3,6 +3,7 @@ const productos = require("../productos/productos.model");
 const {verifyToken, verifyRole} = require("../middleware/roleAuth");
 const categoriaProductos = require("../categoriaProductos/categoriaProductos.model");
 const { validateCreateProducto, validateUpdateProducto } = require('../validators/productos.validator');
+const {Op} = require("sequelize");
 const ROLE_ADMIN = parseInt(process.env.ROLE_ADMIN);
 const ROLE_USER = parseInt(process.env.ROLE_USER);
 
@@ -74,7 +75,25 @@ router.put("/productos/:idProducto",verifyToken, verifyRole([ROLE_ADMIN, ROLE_US
 
 router.get('/productos', async (req, res) => {
     try {
-        const productosList = await productos.findAll();
+        const page = parseInt(req.query.page) || 1;
+        const pageSize = parseInt(req.query.pageSize) || 10;
+        const minPrice = parseFloat(req.query.minPrice) || 0;
+        const maxPrice = parseFloat(req.query.maxPrice) || Number.MAX_VALUE;
+        const offset = (page - 1) * pageSize;
+        const limit = pageSize;
+
+        const { count, rows: productosList } = await productos.findAndCountAll({
+            where: {
+                precioProducto: {
+                    [Op.between]: [minPrice, maxPrice]
+                },
+                estados_idestados: {
+                    [Op.ne]: 4
+                }
+            },
+            offset: offset,
+            limit: limit
+        });
 
         const productosConImagenBase64 = productosList.map(producto => {
             const productoJSON = producto.toJSON();
@@ -84,7 +103,15 @@ router.get('/productos', async (req, res) => {
             return productoJSON;
         });
 
-        res.status(200).json(productosConImagenBase64);
+        res.status(200).json({
+            listProducts: productosConImagenBase64,
+            pagination: {
+                total: count,
+                page: page,
+                pageSize: pageSize,
+                totalPages: Math.ceil(count / pageSize),
+            },
+        });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Error al obtener los productos', error });

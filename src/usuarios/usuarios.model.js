@@ -1,6 +1,8 @@
 const { Model, DataTypes } = require("sequelize");
 const sequelize = require('../db/mysql');
 const clientes = require('../clientes/clientes.model');
+const rol = require('../rol/rol.model');
+const estado = require("../estado/estado.model");
 
 class usuarios extends Model {}
 
@@ -61,7 +63,7 @@ usuarios.init({
     },
     clientes_idClientes: {
         type: DataTypes.INTEGER,
-        allowNull: false,
+        allowNull: true,
         references: {
             model: "Clientes",
             key: "idCliente"
@@ -75,5 +77,7 @@ usuarios.init({
 });
 
 usuarios.belongsTo(clientes, { foreignKey: 'Clientes_idClientes', as: 'cliente' });
+usuarios.belongsTo(rol, { foreignKey: 'rol_idrol', as: 'rol' });
+usuarios.belongsTo(estado, { foreignKey: 'estados_idestados', as: 'estado' });
 
 module.exports = usuarios;
