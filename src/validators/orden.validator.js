@@ -31,7 +31,7 @@ const validateOrdenCreate = [
         .isLength({max: 75}).withMessage('El correo electrónico no puede exceder los 75 caracteres'),
 
     check('fechaEntrega')
-        .exists().withMessage('La fecha de entrega es obligatoria')
+        .optional({ nullable: true })
         .isISO8601().withMessage('La fecha de entrega debe ser una fecha válida')
         .custom((value) => {
             const now = new Date();
@@ -43,7 +43,7 @@ const validateOrdenCreate = [
 
     check('totalOrden')
         .exists().withMessage('El total de la orden es obligatorio')
-        .isDecimal({ decimal_digits: '2' }).withMessage('El total de la orden debe ser un número decimal con hasta 2 decimales')
+        .isDecimal().withMessage('El total de la orden debe ser un número decimal')
         .isFloat({ min: 1 }).withMessage('El total de la orden debe ser mayor o igual a 0'),
 
     check('detalle')

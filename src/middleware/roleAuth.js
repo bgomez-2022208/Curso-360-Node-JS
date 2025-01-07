@@ -1,46 +1,50 @@
-const usuarios = require('../usuarios/usuarios.model')
+const usuarios = require('../usuarios/usuarios.model');
 const jwt = require('jsonwebtoken');
 
-const SECRET_KEY = process.env.SECRET_KEY;
 
 const verifyToken = (req, res, next) => {
     const token = req.headers['authorization'];
     if (!token) {
-        return res.status(403).send({ message: 'No token provided' });
+        return res.status(403).json({ message: 'No token provided' });
     }
-    const tokenWithoutBearer = token.replace('Bearer ', '');
 
-    jwt.verify(tokenWithoutBearer, SECRET_KEY, async (err, decoded) => {
+    const tokenParts = token.split(' ');
+    if (tokenParts.length !== 2 || tokenParts[0] !== 'Bearer') {
+        return res.status(403).json({ message: 'Token mal formado, asegúrese de que esté en el formato "Bearer <token>"' });
+    }
+
+    const actualToken = tokenParts[1];
+
+    jwt.verify(actualToken, process.env.SECRET_KEY, (err, decoded) => {
         if (err) {
-            return res.status(401).send({ message: 'Token Invalido' });
+            console.error('Error verifying token:', err);
+            return res.status(500).json({ message: 'Failed to authenticate token', error: err.message });
         }
-        const userId = decoded.idUsuarios;
 
-        if (!userId) {
-            return res.status(400).send({ message: 'Invalid token structure, missing user ID' });
-        }
-        try {
-            const user = await usuarios.findOne({ where: { idusuarios: userId } });
-
-            if (!user) {
-                return res.status(404).send({ message: 'No se encontro el usuario' });
-            }
-            req.user = user;
-            next();
-        } catch (error) {
-            console.error(error);
-            return res.status(500).send({ message: 'Server error' });
-        }
+        req.user = {
+            id: decoded.idUsuarios,
+            rol_idrol: decoded.rol_idrol
+        };
+        next();
     });
 };
 
+
+
+
+
 const verifyRole = (roles) => {
     return (req, res, next) => {
-        const userRole = req.user.rol_idrol;
-        if (!roles.includes(userRole)) {
-            return res.status(403).send({ message: 'Acceso denegado tu no puedes hacer esta acción.' });
+        if (!req.user) {
+            return res.status(403).json({ message: 'Usuario no autenticado' });
         }
-        next()
+
+        const userRole = req.user.rol_idrol;
+        if (!userRole || !roles.includes(userRole)) {
+            return res.status(403).json({ message: 'Acceso denegado, no tienes permiso para realizar esta acción.' });
+        }
+
+        next();
     };
 };
 
