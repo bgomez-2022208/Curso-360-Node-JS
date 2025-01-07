@@ -4,16 +4,20 @@ const {verifyToken, verifyRole} = require("../middleware/roleAuth");
 const { validateCategoriaProducto, validateCategoriaProductoUpdate } = require('../validators/categoriaProductos.validator');
 const ROLE_ADMIN = parseInt(process.env.ROLE_ADMIN);
 const ROLE_USER = parseInt(process.env.ROLE_USER);
+const usuarios = require("../usuarios/usuarios.model");
+
 
 
 router.post("/categoriaProductos", verifyToken, verifyRole([ROLE_ADMIN, ROLE_USER]), validateCategoriaProducto, async (req, res) => {
     try {
+        const currentDate = new Date();
         const categoriaProductosData = req.body;
+        const { id } = req.user;
         const createCategoriaProducto = await categoriaProductos.create({
-            usuarios_idusuarios: categoriaProductosData.usuarios_idusuarios,
+            usuarios_idusuarios: id,
             nombreCategoriaProducto: categoriaProductosData.nombreCategoriaProducto,
-            estados_idestados: categoriaProductosData.idEstado,
-            fechaCreacion: categoriaProductosData.fechaCreacion
+            estados_idestados: 1,
+            fechaCreacion: currentDate
         });
         res.status(201).json({
             message: "Categoría de producto creada exitosamente",
@@ -34,10 +38,8 @@ router.put("/categoriaProductos/:idCategoriaProductos",  verifyToken, verifyRole
 
     try {
         const updateCategoriaProducto = await categoriaProductos.update({
-            usuarios_idusuarios: categoriaProductosData.usuarios_idusuarios,
             nombreCategoriaProducto: categoriaProductosData.nombreCategoriaProducto,
             estados_idestados: categoriaProductosData.idEstado,
-            fechaCreacion: categoriaProductosData.fechaCreacion
         }, {
             where: {
                 idCategoriaProductos: idCategoriaProductos
@@ -71,6 +73,51 @@ router.get("/categorias", async (req, res) => {
         console.error("Error al obtener las categorías:", error);
         res.status(500).json({
             message: "Hubo un error al obtener las categorías",
+            error: error.message
+        });
+    }
+});
+router.get('/listarCategorias', async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const pageSize = parseInt(req.query.pageSize) || 10;
+        const offset = (page - 1) * pageSize;
+        const limit = pageSize;
+
+        const categoriasList = await categoriaProductos.findAll({
+            include: [
+                {
+                    model: usuarios,
+                    as: 'usuario',
+                    attributes: ['nombreCompleto']
+                }
+            ],
+            limit: limit,
+            offset: offset,
+        });
+
+        if (!categoriasList || categoriasList.length === 0) {
+            return res.status(404).json({
+                message: "No se encontraron categorías"
+            });
+        }
+
+        const totalCategorias = await categoriaProductos.count();
+
+        res.status(200).json({
+            message: "Categorías obtenidas exitosamente.",
+            categorias: categoriasList,
+            pagination: {
+                total: totalCategorias,
+                page: page,
+                pageSize: pageSize,
+                totalPages: Math.ceil(totalCategorias / pageSize),
+            },
+        });
+    } catch (error) {
+        console.error('Error al obtener las categorías:', error);
+        res.status(500).json({
+            message: "Error interno del servidor",
             error: error.message
         });
     }

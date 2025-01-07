@@ -1,6 +1,7 @@
 const {Sequelize, Model, DataTypes, STRING} = require("sequelize")
 
 const sequelize = require('../db/mysql');
+const usuarios = require("../usuarios/usuarios.model");
 
 class categoriaProductos extends Model {
 }
@@ -49,5 +50,7 @@ categoriaProductos.init({
     tableName: 'CategoriaProductos',
     timestamps: false
 })
+
+categoriaProductos.belongsTo(usuarios, { as: 'usuario', foreignKey: 'usuarios_idusuarios' });
 
 module.exports = categoriaProductos
