@@ -4,7 +4,7 @@ const rol = require("../rol/rol.model")
 const estado = require("../estado/estado.model")
 const clientes = require("../clientes/clientes.model");
 const bcrypt = require('bcryptjs');
-const { validateUsuariosCreate, validateUpdateUsuario} = require('../validators/usuarios.validator')
+const {validateUsuariosCreate, validateUpdateUsuario} = require('../validators/usuarios.validator')
 const jwt = require('jsonwebtoken');
 const {verifyToken, verifyRole} = require("../middleware/roleAuth");
 const orden = require("../ordenDetalle/orden.model");
@@ -19,14 +19,14 @@ const tokenSign = (user) => {
         rol_idrol: user.rol_idrol,
     };
 
-    return jwt.sign(payload, secretKey, { expiresIn: process.env.TIME_EXPIRATION_TOKEN });
+    return jwt.sign(payload, secretKey, {expiresIn: process.env.TIME_EXPIRATION_TOKEN});
 };
 
 router.post("/register", async (req, res) => {
     const clientesData = req.body;
     const t = await clientes.sequelize.transaction();
     try {
-        const existingClient = await clientes.findOne({ where: { email: clientesData.email } });
+        const existingClient = await clientes.findOne({where: {email: clientesData.email}});
         if (existingClient) {
             return res.status(400).json({
                 ok: false,
@@ -39,12 +39,12 @@ router.post("/register", async (req, res) => {
             direccionEntrega: clientesData.direccionEntrega,
             telefono: clientesData.telefono,
             email: clientesData.email
-        }, { transaction: t });
+        }, {transaction: t});
 
-        const defaultRole = await rol.findOne({ where: { nombre: process.env.DEFAULT_ROLE } });
+        const defaultRole = await rol.findOne({where: {nombre: process.env.DEFAULT_ROLE}});
         console.log('Rol:', defaultRole);
 
-        const defaultEstado = await estado.findOne({ where: { nombre: process.env.DEFAULT_STATUS } });
+        const defaultEstado = await estado.findOne({where: {nombre: process.env.DEFAULT_STATUS}});
         console.log('Estado:', defaultEstado);
 
 
@@ -62,13 +62,13 @@ router.post("/register", async (req, res) => {
             fechaNacimiento: clientesData.fechaNacimiento,
             fechaCreacion: new Date(),
             clientes_idClientes: createCliente.idCliente
-        }, { transaction: t });
+        }, {transaction: t});
 
         await t.commit();
 
         res.status(201).json({
             ok: true,
-            data: { cliente: createCliente, usuario: createUser }
+            data: {cliente: createCliente, usuario: createUser}
         });
 
     } catch (error) {
@@ -118,21 +118,27 @@ router.put("/editarCliente/:idUsuario", verifyToken, verifyRole([ROLE_ADMIN, ROL
             telefono: clientesData.telefono,
             email: clientesData.email
         }, {
-            where: { idCliente: idCliente },
+            where: {idCliente: idCliente},
             transaction: t
         });
 
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(clientesData.password, salt);
+        let hashedPassword;
+        if (clientesData.password.startsWith('$2a$')) {
+            hashedPassword = clientesData.password;
+        } else {
+            const salt = await bcrypt.genSalt(10);
+            hashedPassword = await bcrypt.hash(clientesData.password, salt);
+        }
 
         await usuarios.update({
+            estados_idestados: clientesData.idEstados,
             correoElectronico: clientesData.email,
             nombreCompleto: clientesData.nombreCompleto,
             passwordUsuario: hashedPassword,
             telefonoUsuario: clientesData.telefono,
             fechaNacimiento: clientesData.fechaNacimiento
         }, {
-            where: { idUsuarios: idUsuario },
+            where: {idUsuarios: idUsuario},
             transaction: t
         });
 
@@ -186,7 +192,7 @@ router.post("/usuarios", validateUsuariosCreate, async (req, res) => {
 
     } catch (error) {
         let errorMessage = error.message;
-        if(error.name === 'SequelizeUniqueConstraintError'){
+        if (error.name === 'SequelizeUniqueConstraintError') {
             errorMessage = "Duplicate entry error: " + error.errors.map(e => e.message).join(', ');
         }
         console.error("Error al crear el usuario:", error);
@@ -197,14 +203,22 @@ router.post("/usuarios", validateUsuariosCreate, async (req, res) => {
     }
 });
 
-router.put("/usuarios/:idUsuario", validateUpdateUsuario, verifyToken, verifyRole([ROLE_ADMIN, ROLE_USER]),  async (req, res) => {
+router.put("/usuarios/:idUsuario", validateUpdateUsuario, verifyToken, verifyRole([ROLE_ADMIN, ROLE_USER]), async (req, res) => {
     const idusuarios = req.params.idUsuario;
     const usuariosData = req.body;
+
+    let hashedPassword;
+    if (usuariosData.password.startsWith('$2a$')) {
+        hashedPassword = usuariosData.password;
+    } else {
+        const salt = await bcrypt.genSalt(10);
+        hashedPassword = await bcrypt.hash(usuariosData.password, salt);
+    }
 
     const updateUsuarios = await usuarios.update({
         estados_idestados: usuariosData.idEstados,
         nombreCompleto: usuariosData.nombreCompleto,
-        passwordUsuario: usuariosData.password,
+        passwordUsuario: hashedPassword,
         telefonoUsuario: usuariosData.telefono,
         fechaNacimiento: usuariosData.fechaNacimiento,
     }, {
@@ -220,23 +234,29 @@ router.put("/usuarios/:idUsuario", validateUpdateUsuario, verifyToken, verifyRol
 });
 
 router.post("/login", async (req, res) => {
-    const { correoElectronico, passwordUsuario } = req.body;
+    const {correoElectronico, passwordUsuario} = req.body;
 
     if (!correoElectronico || !passwordUsuario) {
-        return res.status(400).send({ message: 'El correo electrónico y la contraseña son requeridos' });
+        return res.status(400).send({message: 'El correo electrónico y la contraseña son requeridos'});
     }
     try {
-        const user = await usuarios.findOne({ where: { correo_electronico: correoElectronico } });
+        const user = await usuarios.findOne({where: {correo_electronico: correoElectronico}});
 
         if (!user) {
-            return res.status(404).send({ message: 'Usuario no encontrado' });
+            return res.status(404).send({message: 'Usuario no encontrado'});
         }
 
         const isPasswordValid = await bcrypt.compare(passwordUsuario, user.passwordUsuario);
 
+
         if (!isPasswordValid) {
-            return res.status(401).send({ message: 'Contraseña incorrecta' });
+            return res.status(401).send({message: 'Contraseña incorrecta'});
         }
+
+        if (user.estados_idestados !== 1) {
+            return res.status(401).send({message: 'Usuario no activo'});
+        }
+
         const tokenSession = tokenSign(user);
         res.status(200).json({
             message: "Login exitoso",
@@ -245,7 +265,7 @@ router.post("/login", async (req, res) => {
 
     } catch (error) {
         console.error(error);
-        res.status(500).send({ message: 'Error en el servidor' });
+        res.status(500).send({message: 'Error en el servidor'});
     }
 });
 
@@ -256,7 +276,7 @@ router.get('/usuarios/:idUsuarios', async (req, res) => {
 
     try {
         const usuario = await usuarios.findOne({
-            where: { idusuarios: idUsuarios },
+            where: {idusuarios: idUsuarios},
             include: {
                 model: clientes,
                 as: 'cliente',

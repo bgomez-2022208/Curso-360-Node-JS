@@ -2,9 +2,6 @@ const { check } = require('express-validator')
 const { validateResult } = require("../helpers/validateHelper");
 
 const validateUsuariosCreate =[
-  check('rol_idrol')
-      .exists().withMessage('El campo Rol Id es requerido')
-      .isInt({ gt: 0 }).withMessage('El campo Rol Id debe ser un número entero positivo'),
 
     check('correoElectronico')
         .not().isEmpty().withMessage('El correo electronico es obligatorio')
